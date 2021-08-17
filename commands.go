@@ -2,6 +2,7 @@ package goevents
 
 import (
 	"fmt"
+	"log"
 )
 
 type Command struct {
@@ -12,25 +13,27 @@ type Command struct {
 
 type CommandHandler func(cmd *Command) error
 
-type CommandBus interface {
-	Register(commandType string, handler CommandHandler)
+type CommandDispatcher interface {
+	Handle(commandType string, handler CommandHandler)
 	Dispatch(cmd *Command) error
 }
 
-type MemoryCommandBus struct {
+type DefaultCommandDispatcher struct {
 	handlers map[string]CommandHandler
 }
 
-func (bus *MemoryCommandBus) Register(commandType string, handler CommandHandler) {
-	if bus.handlers == nil {
-		bus.handlers = make(map[string]CommandHandler)
+func (dispatcher *DefaultCommandDispatcher) Handle(commandType string, handler CommandHandler) {
+	if dispatcher.handlers == nil {
+		dispatcher.handlers = make(map[string]CommandHandler)
 	}
 
-	bus.handlers[commandType] = handler
+	dispatcher.handlers[commandType] = handler
 }
 
-func (bus *MemoryCommandBus) Dispatch(cmd *Command) error {
-	handler, ok := bus.handlers[cmd.Type]
+func (dispatcher *DefaultCommandDispatcher) Dispatch(cmd *Command) error {
+	log.Printf("[command] %s {%s}", cmd.Type, string(cmd.Data))
+
+	handler, ok := dispatcher.handlers[cmd.Type]
 	if !ok {
 		return fmt.Errorf("unhandled command: %q", cmd.Type)
 	}

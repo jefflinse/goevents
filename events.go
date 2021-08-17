@@ -1,5 +1,7 @@
 package goevents
 
+import "log"
+
 type Event struct {
 	Type string
 	UUID string
@@ -14,13 +16,15 @@ type EventBus interface {
 }
 
 type MemoryEventBus struct {
-	globalSubscribes []EventHandler
-	subscribers      map[string][]EventHandler
+	globalSubscribers []EventHandler
+	subscribers       map[string][]EventHandler
 }
 
 func (bus *MemoryEventBus) Publish(event *Event) error {
-	for _, handler := range bus.globalSubscribes {
-		if err := handler(event); err != nil {
+	log.Printf("[event] %s {%s}\n", event.Type, string(event.Data))
+
+	for _, globalHandler := range bus.globalSubscribers {
+		if err := globalHandler(event); err != nil {
 			return err
 		}
 	}
@@ -34,7 +38,7 @@ func (bus *MemoryEventBus) Publish(event *Event) error {
 	return nil
 }
 
-func (bus *MemoryEventBus) Subscribe(eventType string, handler EventHandler) error {
+func (bus *MemoryEventBus) On(eventType string, handler EventHandler) error {
 	if bus.subscribers == nil {
 		bus.subscribers = make(map[string][]EventHandler)
 	}
@@ -48,11 +52,11 @@ func (bus *MemoryEventBus) Subscribe(eventType string, handler EventHandler) err
 	return nil
 }
 
-func (bus *MemoryEventBus) SubscribeAll(handler EventHandler) error {
-	if bus.globalSubscribes == nil {
-		bus.globalSubscribes = make([]EventHandler, 0)
+func (bus *MemoryEventBus) OnAll(handler EventHandler) error {
+	if bus.globalSubscribers == nil {
+		bus.globalSubscribers = make([]EventHandler, 0)
 	}
 
-	bus.globalSubscribes = append(bus.globalSubscribes, handler)
+	bus.globalSubscribers = append(bus.globalSubscribers, handler)
 	return nil
 }
