@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/jefflinse/goevents"
 )
@@ -24,6 +25,7 @@ func (c *DoSomethingCommand) Data() []byte {
 type SomethingHappenedEvent struct {
 	Before string
 	After  string
+	When   time.Time
 }
 
 func (c *SomethingHappenedEvent) Type() string {
@@ -33,6 +35,10 @@ func (c *SomethingHappenedEvent) Type() string {
 func (c *SomethingHappenedEvent) Data() []byte {
 	b, _ := json.Marshal(c)
 	return b
+}
+
+func (c *SomethingHappenedEvent) OccurredAt() time.Time {
+	return c.When
 }
 
 func main() {
@@ -56,7 +62,7 @@ func main() {
 	commands.Handle("DoSomething", func(c goevents.Command) error {
 		cmd := c.(*DoSomethingCommand)
 		fmt.Println("DoSomething:", cmd.Before, "->", cmd.After)
-		events.Publish(&SomethingHappenedEvent{Before: cmd.Before, After: cmd.After})
+		events.Publish(&SomethingHappenedEvent{Before: cmd.Before, After: cmd.After, When: time.Now()})
 		return nil
 	})
 

@@ -1,9 +1,13 @@
 package goevents
 
-import "log"
+import (
+	"log"
+	"time"
+)
 
 type Event interface {
 	Type() string
+	OccurredAt() time.Time
 	Data() []byte
 }
 
