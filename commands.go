@@ -14,12 +14,14 @@ type CommandHandler func(cmd Command) error
 
 type CommandDispatcher interface {
 	Handle(commandType string, handler CommandHandler)
-	Dispatch(cmd *Command) error
+	Dispatch(cmd Command) error
 }
 
 type DefaultCommandDispatcher struct {
 	handlers map[string]CommandHandler
 }
+
+var _ CommandDispatcher = &DefaultCommandDispatcher{}
 
 func (dispatcher *DefaultCommandDispatcher) Handle(commandType string, handler CommandHandler) {
 	if dispatcher.handlers == nil {

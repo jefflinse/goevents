@@ -12,7 +12,7 @@ type EventHandler func(event Event) error
 // An EventBus is anything capable of event pub/sub.
 type EventBus interface {
 	Publish(event Event) error
-	Subscribe(eventType string, handler EventHandler) error
+	On(eventType string, handler EventHandler) error
 }
 
 // MemoryEventBus is an in-memory event bus implementation.
@@ -20,6 +20,8 @@ type MemoryEventBus struct {
 	globalSubscribers []EventHandler
 	subscribers       map[string][]EventHandler
 }
+
+var _ EventBus = &MemoryEventBus{}
 
 func (bus *MemoryEventBus) Publish(event Event) error {
 	log.Printf("[event] %s {%s}\n", event.Type(), string(event.Data()))
