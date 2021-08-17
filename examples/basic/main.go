@@ -1,10 +1,39 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/jefflinse/goevents"
 )
+
+type DoSomethingCommand struct {
+	Before string
+	After  string
+}
+
+func (c *DoSomethingCommand) Type() string {
+	return "DoSomething"
+}
+
+func (c *DoSomethingCommand) Data() []byte {
+	b, _ := json.Marshal(c)
+	return b
+}
+
+type SomethingHappenedEvent struct {
+	Before string
+	After  string
+}
+
+func (c *SomethingHappenedEvent) Type() string {
+	return "SomethingHappened"
+}
+
+func (c *SomethingHappenedEvent) Data() []byte {
+	b, _ := json.Marshal(c)
+	return b
+}
 
 func main() {
 	// Create the event and command busses.
@@ -12,22 +41,24 @@ func main() {
 	commands := goevents.DefaultCommandDispatcher{}
 
 	// Register an event handler that will be called when *any* event is published.
-	events.OnAll(func(event *goevents.Event) error {
-		fmt.Println("received event:", event.Type)
+	events.OnAll(func(e goevents.Event) error {
+		fmt.Println("received event:", e.Type())
 		return nil
 	})
 
 	// Register an event handler that will be called when the "SomethingHappened" event is published.
-	events.On("SomethingHappened", func(event *goevents.Event) error {
-		fmt.Println("something happened")
+	events.On("SomethingHappened", func(e goevents.Event) error {
+		fmt.Println("something happened:", e.Type(), string(e.Data()))
 		return nil
 	})
 
 	// Create a command handler that will be called when the "DoSomething" command is dispatcheed.
-	commands.Handle("DoSomething", func(cmd *goevents.Command) error {
-		events.Publish(&goevents.Event{Type: "SomethingHappened"})
+	commands.Handle("DoSomething", func(c goevents.Command) error {
+		cmd := c.(*DoSomethingCommand)
+		fmt.Println("DoSomething:", cmd.Before, "->", cmd.After)
+		events.Publish(&SomethingHappenedEvent{Before: cmd.Before, After: cmd.After})
 		return nil
 	})
 
-	commands.Dispatch(&goevents.Command{Type: "DoSomething"})
+	commands.Dispatch(&DoSomethingCommand{Before: "before", After: "after"})
 }

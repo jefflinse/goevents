@@ -5,13 +5,12 @@ import (
 	"log"
 )
 
-type Command struct {
-	Type string
-	UUID string
-	Data []byte
+type Command interface {
+	Type() string
+	Data() []byte
 }
 
-type CommandHandler func(cmd *Command) error
+type CommandHandler func(cmd Command) error
 
 type CommandDispatcher interface {
 	Handle(commandType string, handler CommandHandler)
@@ -30,12 +29,12 @@ func (dispatcher *DefaultCommandDispatcher) Handle(commandType string, handler C
 	dispatcher.handlers[commandType] = handler
 }
 
-func (dispatcher *DefaultCommandDispatcher) Dispatch(cmd *Command) error {
-	log.Printf("[command] %s {%s}", cmd.Type, string(cmd.Data))
+func (dispatcher *DefaultCommandDispatcher) Dispatch(cmd Command) error {
+	log.Printf("[command] %s {%s}", cmd.Type(), string(cmd.Data()))
 
-	handler, ok := dispatcher.handlers[cmd.Type]
+	handler, ok := dispatcher.handlers[cmd.Type()]
 	if !ok {
-		return fmt.Errorf("unhandled command: %q", cmd.Type)
+		return fmt.Errorf("unhandled command: %q", cmd.Type())
 	}
 
 	return handler(cmd)
