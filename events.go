@@ -13,6 +13,7 @@ type EventHandler func(event Event) error
 type EventBus interface {
 	Publish(event Event) error
 	On(eventType string, handler EventHandler) error
+	OnAll(handler EventHandler) error
 }
 
 // MemoryEventBus is an in-memory event bus implementation.
