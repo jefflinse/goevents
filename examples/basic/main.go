@@ -44,24 +44,24 @@ func (c *SomethingHappenedEvent) OccurredAt() time.Time {
 func main() {
 	// Create the event and command busses.
 	events := goevents.MemoryEventBus{}
-	commands := goevents.DefaultCommandDispatcher{}
+	commands := goevents.DefaultCommandBus{}
 
 	// Register an event handler that will be called when *any* event is published.
-	events.OnAll(func(e goevents.Event) error {
-		fmt.Println("received event:", e.Type())
+	events.SubscribeAll(func(e goevents.Event) error {
+		fmt.Printf("inside global event handler! (type: %s, data: %s)\n", e.Type(), string(e.Data()))
 		return nil
 	})
 
 	// Register an event handler that will be called when the "SomethingHappened" event is published.
-	events.On("SomethingHappened", func(e goevents.Event) error {
-		fmt.Println("something happened:", e.Type(), string(e.Data()))
+	events.Subscribe("SomethingHappened", func(e goevents.Event) error {
+		fmt.Printf("inside %s event handler! (data: %s)\n", e.Type(), string(e.Data()))
 		return nil
 	})
 
 	// Create a command handler that will be called when the "DoSomething" command is dispatcheed.
 	commands.Handle("DoSomething", func(c goevents.Command) error {
 		cmd := c.(*DoSomethingCommand)
-		fmt.Println("DoSomething:", cmd.Before, "->", cmd.After)
+		fmt.Printf("inside %s command handler!\n", cmd.Type())
 		events.Publish(&SomethingHappenedEvent{Before: cmd.Before, After: cmd.After, When: time.Now()})
 		return nil
 	})

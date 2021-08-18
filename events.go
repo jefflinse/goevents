@@ -13,11 +13,31 @@ type Event interface {
 
 type EventHandler func(event Event) error
 
+type BasicEvent struct {
+	EventType       string
+	EventOccurredAt time.Time
+	EventData       []byte
+}
+
+func (e *BasicEvent) Type() string {
+	return e.EventType
+}
+
+func (e *BasicEvent) OccurredAt() time.Time {
+	return e.EventOccurredAt
+}
+
+func (e *BasicEvent) Data() []byte {
+	return e.EventData
+}
+
+var _ Event = &BasicEvent{}
+
 // An EventBus is anything capable of event pub/sub.
 type EventBus interface {
 	Publish(event Event) error
-	On(eventType string, handler EventHandler) error
-	OnAll(handler EventHandler) error
+	Subscribe(eventType string, handler EventHandler) error
+	SubscribeAll(handler EventHandler) error
 }
 
 // MemoryEventBus is an in-memory event bus implementation.
@@ -46,7 +66,7 @@ func (bus *MemoryEventBus) Publish(event Event) error {
 	return nil
 }
 
-func (bus *MemoryEventBus) On(eventType string, handler EventHandler) error {
+func (bus *MemoryEventBus) Subscribe(eventType string, handler EventHandler) error {
 	if bus.subscribers == nil {
 		bus.subscribers = make(map[string][]EventHandler)
 	}
@@ -60,7 +80,7 @@ func (bus *MemoryEventBus) On(eventType string, handler EventHandler) error {
 	return nil
 }
 
-func (bus *MemoryEventBus) OnAll(handler EventHandler) error {
+func (bus *MemoryEventBus) SubscribeAll(handler EventHandler) error {
 	if bus.globalSubscribers == nil {
 		bus.globalSubscribers = make([]EventHandler, 0)
 	}

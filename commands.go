@@ -10,20 +10,24 @@ type Command interface {
 	Data() []byte
 }
 
+// A CommandHandler is a function that handles a Command.
 type CommandHandler func(cmd Command) error
 
-type CommandDispatcher interface {
+// A CommandBus is anything capable of command pub/sub.
+type CommandBus interface {
 	Handle(commandType string, handler CommandHandler)
 	Dispatch(cmd Command) error
 }
 
-type DefaultCommandDispatcher struct {
+// The DefaultCommandBus is a CommandBus that dispatches commands to
+// handlesr registered locally in-memory.
+type DefaultCommandBus struct {
 	handlers map[string]CommandHandler
 }
 
-var _ CommandDispatcher = &DefaultCommandDispatcher{}
+var _ CommandBus = &DefaultCommandBus{}
 
-func (dispatcher *DefaultCommandDispatcher) Handle(commandType string, handler CommandHandler) {
+func (dispatcher *DefaultCommandBus) Handle(commandType string, handler CommandHandler) {
 	if dispatcher.handlers == nil {
 		dispatcher.handlers = make(map[string]CommandHandler)
 	}
@@ -31,7 +35,7 @@ func (dispatcher *DefaultCommandDispatcher) Handle(commandType string, handler C
 	dispatcher.handlers[commandType] = handler
 }
 
-func (dispatcher *DefaultCommandDispatcher) Dispatch(cmd Command) error {
+func (dispatcher *DefaultCommandBus) Dispatch(cmd Command) error {
 	log.Printf("[command] %s {%s}", cmd.Type(), string(cmd.Data()))
 
 	handler, ok := dispatcher.handlers[cmd.Type()]
