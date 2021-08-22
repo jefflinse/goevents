@@ -37,7 +37,7 @@ func (c *SomethingHappenedEvent) Data() []byte {
 	return b
 }
 
-func (c *SomethingHappenedEvent) OccurredAt() time.Time {
+func (c *SomethingHappenedEvent) At() time.Time {
 	return c.When
 }
 
@@ -53,7 +53,7 @@ func main() {
 	})
 
 	// Register an event handler that will be called when the "SomethingHappened" event is published.
-	events.Subscribe("SomethingHappened", func(e goevents.Event) error {
+	events.Subscribe(&SomethingHappenedEvent{}, func(e goevents.Event) error {
 		fmt.Printf("inside %s event handler! (data: %s)\n", e.Type(), string(e.Data()))
 		return nil
 	})

@@ -27,6 +27,7 @@ type DefaultCommandBus struct {
 
 var _ CommandBus = &DefaultCommandBus{}
 
+// Handle registers a handler for a command type.
 func (dispatcher *DefaultCommandBus) Handle(commandType string, handler CommandHandler) {
 	if dispatcher.handlers == nil {
 		dispatcher.handlers = make(map[string]CommandHandler)
@@ -35,6 +36,7 @@ func (dispatcher *DefaultCommandBus) Handle(commandType string, handler CommandH
 	dispatcher.handlers[commandType] = handler
 }
 
+// Dispatch dispatches a command to the appropriate handler.
 func (dispatcher *DefaultCommandBus) Dispatch(cmd Command) error {
 	log.Printf("[command] %s {%s}", cmd.Type(), string(cmd.Data()))
 

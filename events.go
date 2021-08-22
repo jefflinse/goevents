@@ -6,29 +6,28 @@ import (
 )
 
 type Event interface {
-	Type() string
-	OccurredAt() time.Time
+	At() time.Time
 	Data() []byte
+	Type() string
 }
 
 type EventHandler func(event Event) error
 
 type BasicEvent struct {
-	EventType       string
-	EventOccurredAt time.Time
-	EventData       []byte
+	ETime time.Time
+	EData []byte
 }
 
-func (e *BasicEvent) Type() string {
-	return e.EventType
-}
-
-func (e *BasicEvent) OccurredAt() time.Time {
-	return e.EventOccurredAt
+func (e *BasicEvent) At() time.Time {
+	return e.ETime
 }
 
 func (e *BasicEvent) Data() []byte {
-	return e.EventData
+	return e.EData
+}
+
+func (e *BasicEvent) Type() string {
+	return getEventType(e)
 }
 
 var _ Event = &BasicEvent{}
@@ -36,7 +35,7 @@ var _ Event = &BasicEvent{}
 // An EventBus is anything capable of event pub/sub.
 type EventBus interface {
 	Publish(event Event) error
-	Subscribe(eventType string, handler EventHandler) error
+	Subscribe(eventType Event, handler EventHandler) error
 	SubscribeAll(handler EventHandler) error
 }
 
@@ -49,7 +48,8 @@ type MemoryEventBus struct {
 var _ EventBus = &MemoryEventBus{}
 
 func (bus *MemoryEventBus) Publish(event Event) error {
-	log.Printf("[event] %s {%s}\n", event.Type(), string(event.Data()))
+	eventType := getEventType(event)
+	log.Printf("[event] %s {%s}\n", eventType, string(event.Data()))
 
 	for _, globalHandler := range bus.globalSubscribers {
 		if err := globalHandler(event); err != nil {
@@ -57,7 +57,7 @@ func (bus *MemoryEventBus) Publish(event Event) error {
 		}
 	}
 
-	for _, handler := range bus.subscribers[event.Type()] {
+	for _, handler := range bus.subscribers[eventType] {
 		if err := handler(event); err != nil {
 			return err
 		}
@@ -66,16 +66,18 @@ func (bus *MemoryEventBus) Publish(event Event) error {
 	return nil
 }
 
-func (bus *MemoryEventBus) Subscribe(eventType string, handler EventHandler) error {
+func (bus *MemoryEventBus) Subscribe(eventType Event, handler EventHandler) error {
+	eventTypeName := getEventType(eventType)
+
 	if bus.subscribers == nil {
 		bus.subscribers = make(map[string][]EventHandler)
 	}
 
-	if bus.subscribers[eventType] == nil {
-		bus.subscribers[eventType] = make([]EventHandler, 0)
+	if bus.subscribers[eventTypeName] == nil {
+		bus.subscribers[eventTypeName] = make([]EventHandler, 0)
 	}
 
-	bus.subscribers[eventType] = append(bus.subscribers[eventType], handler)
+	bus.subscribers[eventTypeName] = append(bus.subscribers[eventTypeName], handler)
 
 	return nil
 }
