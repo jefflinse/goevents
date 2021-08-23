@@ -11,7 +11,7 @@ type EventPublisher interface {
 
 // An EventSubscriber is anything that can subscribe to events.
 type EventSubscriber interface {
-	On(string, EventHandler) error
+	On(Event, EventHandler) error
 }
 
 // An EventBus is anything capable of event pub/sub.
@@ -68,10 +68,12 @@ func (bus *MemoryEventBus) BeforeAny(handler EventHandler) error {
 	return nil
 }
 
-func (bus *MemoryEventBus) On(eventName string, handler EventHandler) error {
+func (bus *MemoryEventBus) On(eventType Event, handler EventHandler) error {
 	if bus.subscribers == nil {
 		bus.subscribers = make(map[string][]EventHandler)
 	}
+
+	eventName := EventName(eventType)
 
 	if bus.subscribers[eventName] == nil {
 		bus.subscribers[eventName] = make([]EventHandler, 0)

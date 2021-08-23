@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/jefflinse/goevents"
@@ -9,23 +8,12 @@ import (
 
 type DoSomethingCommand struct {
 	goevents.JSONCommand
-	User   string
-	Before string
-	After  string
-}
-
-func (c *DoSomethingCommand) Name() string {
-	return "DoSomething"
-}
-
-func (c *DoSomethingCommand) Data() ([]byte, error) {
-	return json.Marshal(c)
+	User string
 }
 
 type SomethingHappenedEvent struct {
 	goevents.JSONEvent
-	Before string
-	After  string
+	User string
 }
 
 func main() {
@@ -45,17 +33,16 @@ func main() {
 	})
 
 	// Register an event handler that will be called when the "SomethingHappened" event is published.
-	events.On("SomethingHappened", func(e goevents.Event) error {
+	events.On(&SomethingHappenedEvent{}, func(e goevents.Event) error {
 		event := e.(*SomethingHappenedEvent)
-		data, err := event.Data()
+		data, err := e.Data()
 		if err != nil {
 			return err
 		}
 
 		fmt.Printf("inside %s event handler! (data: %s)\n", goevents.EventName(e), string(data))
 
-		fmt.Printf("  before: %s\n", event.Before)
-		fmt.Printf("  after:  %s\n", event.After)
+		fmt.Printf("  user: %s\n", event.User)
 		return nil
 	})
 
@@ -81,10 +68,15 @@ func main() {
 	})
 
 	// Create a command handler that will be called when the "DoSomething" command is dispatcheed.
-	commands.Handle("DoSomething", func(c goevents.Command) (goevents.CommandResult, error) {
+	commands.Handle(&DoSomethingCommand{}, func(c goevents.Command) (goevents.CommandResult, error) {
 		cmd := c.(*DoSomethingCommand)
-		fmt.Printf("inside DoSomething command handler!\n")
-		events.Publish(&SomethingHappenedEvent{Before: cmd.Before, After: cmd.After})
+		cmdName := goevents.CommandName(c)
+		fmt.Printf("inside %s command handler!\n", cmdName)
+
+		defer func() {
+			events.Publish(&SomethingHappenedEvent{User: cmd.User})
+		}()
+
 		return nil, nil
 	})
 
@@ -98,5 +90,5 @@ func main() {
 		return nil
 	})
 
-	commands.Dispatch(&DoSomethingCommand{User: "Jeff", Before: "before", After: "after"})
+	commands.Dispatch(&DoSomethingCommand{User: "Jeff"})
 }

@@ -7,7 +7,7 @@ import (
 
 // A CommandBus is anything capable of command pub/sub.
 type CommandBus interface {
-	Handle(string, CommandHandlerFn)
+	Handle(Command, CommandHandlerFn)
 	Dispatch(Command) (CommandResult, error)
 }
 
@@ -27,12 +27,12 @@ func (bus *DefaultCommandBus) BeforeAny(fn CommandProcessorFn) {
 }
 
 // Handle registers the handler for a command type.
-func (bus *DefaultCommandBus) Handle(cmdName string, handler CommandHandlerFn) {
+func (bus *DefaultCommandBus) Handle(commandType Command, handler CommandHandlerFn) {
 	if bus.handlers == nil {
 		bus.handlers = make(map[string]CommandHandlerFn)
 	}
 
-	bus.handlers[cmdName] = handler
+	bus.handlers[CommandName(commandType)] = handler
 }
 
 // AfterAny registers a handler that runs after any command is handled.
