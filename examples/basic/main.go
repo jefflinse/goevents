@@ -8,6 +8,7 @@ import (
 )
 
 type DoSomethingCommand struct {
+	goevents.JSONCommand
 	User   string
 	Before string
 	After  string
@@ -22,7 +23,7 @@ func (c *DoSomethingCommand) Data() ([]byte, error) {
 }
 
 type SomethingHappenedEvent struct {
-	goevents.DefaultEvent
+	goevents.JSONEvent
 	Before string
 	After  string
 }
@@ -39,20 +40,20 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside global pre-event handler! (type: %s, data: %s)\n", e.Name(), string(data))
+		fmt.Printf("inside global pre-event handler! (type: %s, data: %s)\n", goevents.EventName(e), string(data))
 		return nil
 	})
 
 	// Register an event handler that will be called when the "SomethingHappened" event is published.
 	events.On("SomethingHappened", func(e goevents.Event) error {
-		data, err := e.Data()
+		event := e.(*SomethingHappenedEvent)
+		data, err := event.Data()
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("inside %s event handler! (data: %s)\n", e.Name(), string(data))
+		fmt.Printf("inside %s event handler! (data: %s)\n", goevents.EventName(e), string(data))
 
-		event := e.(*SomethingHappenedEvent)
 		fmt.Printf("  before: %s\n", event.Before)
 		fmt.Printf("  after:  %s\n", event.After)
 		return nil
@@ -65,7 +66,7 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside global post-event handler! (type: %s, data: %s)\n", e.Name(), string(data))
+		fmt.Printf("inside global post-event handler! (type: %s, data: %+v)\n", goevents.EventName(e), string(data))
 		return nil
 	})
 
@@ -75,7 +76,7 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside global pre-command handler! (type: %s, data: %s)\n", c.Name(), string(data))
+		fmt.Printf("inside global pre-command handler! (type: %s, data: %s)\n", goevents.CommandName(c), string(data))
 		return nil
 	})
 
@@ -93,7 +94,7 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside global post-command handler! (type: %s, data: %s)\n", c.Name(), string(data))
+		fmt.Printf("inside global post-command handler! (type: %s, data: %s)\n", goevents.CommandName(c), string(data))
 		return nil
 	})
 

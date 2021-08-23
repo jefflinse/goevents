@@ -47,7 +47,7 @@ func (bus *DefaultCommandBus) Dispatch(cmd Command) (CommandResult, error) {
 		return nil, err
 	}
 
-	log.Printf("[dispatch] %s %s\n", cmd.Name(), string(data))
+	log.Printf("[dispatch] %s %s\n", CommandName(cmd), string(data))
 
 	for _, before := range bus.preHandlers {
 		if err := before(cmd); err != nil {
@@ -55,9 +55,9 @@ func (bus *DefaultCommandBus) Dispatch(cmd Command) (CommandResult, error) {
 		}
 	}
 
-	handler, ok := bus.handlers[cmd.Name()]
+	handler, ok := bus.handlers[CommandName(cmd)]
 	if !ok {
-		return nil, fmt.Errorf("no registered command handlers for %q", cmd.Name())
+		return nil, fmt.Errorf("no registered command handlers for %q", CommandName(cmd))
 	}
 
 	result, err := handler(cmd)

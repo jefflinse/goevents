@@ -1,6 +1,8 @@
 package goevents
 
-import "log"
+import (
+	"log"
+)
 
 // An EventPublisher is anything that can publish events.
 type EventPublisher interface {
@@ -33,7 +35,8 @@ func (bus *MemoryEventBus) Publish(event Event) error {
 		return err
 	}
 
-	log.Printf("[publish] %s %s\n", event.Name(), string(data))
+	eventName := EventName(event)
+	log.Printf("[publish] %s %s\n", eventName, string(data))
 
 	for _, before := range bus.globalPreSubscribers {
 		if err := before(event); err != nil {
@@ -41,7 +44,7 @@ func (bus *MemoryEventBus) Publish(event Event) error {
 		}
 	}
 
-	for _, handle := range bus.subscribers[event.Name()] {
+	for _, handle := range bus.subscribers[EventName(event)] {
 		if err := handle(event); err != nil {
 			return err
 		}

@@ -1,28 +1,20 @@
 package goevents
 
 import (
-	"time"
+	"encoding/json"
 )
 
 type Event interface {
-	Name() string
 	Data() ([]byte, error)
 }
 
 type EventHandler func(event Event) error
 
-type DefaultEvent struct {
-	EventName    string
-	DispatchedAt *time.Time
-	EventData    []byte
+// A JSONEvent is an event whose data is simply the event object marshalled as JSON.
+type JSONEvent struct{}
+
+func (e JSONEvent) Data() ([]byte, error) {
+	return json.Marshal(e)
 }
 
-func (e *DefaultEvent) Name() string {
-	return e.EventName
-}
-
-func (e *DefaultEvent) Data() ([]byte, error) {
-	return e.EventData, nil
-}
-
-var _ Event = &DefaultEvent{}
+var _ Event = &JSONEvent{}

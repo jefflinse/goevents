@@ -1,7 +1,8 @@
 package goevents
 
+import "encoding/json"
+
 type Command interface {
-	Name() string
 	Data() ([]byte, error)
 }
 
@@ -15,15 +16,9 @@ type CommandHandlerFn func(cmd Command) (CommandResult, error)
 // A CommandProcessorFn is a function that performs an action before or after handling a Command.
 type CommandProcessorFn func(cmd Command) error
 
-type DefaultCommand struct {
-	CommandName string
-	CommandData []byte
-}
+// A JSONCommand is a command whose data is simply the command object marshalled as JSON.
+type JSONCommand struct{}
 
-func (c *DefaultCommand) Name() string {
-	return c.CommandName
-}
-
-func (c *DefaultCommand) Data() ([]byte, error) {
-	return c.CommandData, nil
+func (c *JSONCommand) Data() ([]byte, error) {
+	return json.Marshal(c)
 }
