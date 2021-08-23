@@ -35,7 +35,7 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside global pre-event handler! (type: %s, data: %s)\n", goevents.EventName(e), string(data))
+		fmt.Printf("inside global pre-event handler!\n  (%s) %s\n", goevents.EventName(e), string(data))
 		return nil
 	})
 
@@ -47,7 +47,7 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside %s event handler! (data: %s)\n", goevents.EventName(e), string(data))
+		fmt.Printf("inside %s event handler!\n  %s\n", goevents.EventName(e), string(data))
 
 		fmt.Printf("  user: %s\n", event.User)
 		return nil
@@ -60,7 +60,7 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside global post-event handler! (type: %s, data: %+v)\n", goevents.EventName(e), string(data))
+		fmt.Printf("inside global post-event handler!\n  (%s) %s\n", goevents.EventName(e), string(data))
 		return nil
 	})
 
@@ -70,16 +70,20 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside global pre-command handler! (type: %s, data: %s)\n", goevents.CommandName(c), string(data))
+		fmt.Printf("inside global pre-command handler\n  (%s) %s\n", goevents.CommandName(c), string(data))
 		return nil
 	})
 
 	// Create a command handler that will be called when the "DoSomething" command is dispatcheed.
 	commands.Handle(&DoSomethingCommand{}, func(c goevents.Command) (goevents.CommandResult, error) {
-		cmd := c.(*DoSomethingCommand)
-		cmdName := goevents.CommandName(c)
-		fmt.Printf("inside %s command handler!\n", cmdName)
+		data, err := c.Data()
+		if err != nil {
+			return nil, err
+		}
 
+		fmt.Printf("inside %s command handler!\n  %s\n", goevents.CommandName(c), string(data))
+
+		cmd := c.(*DoSomethingCommand)
 		defer func() {
 			events.Publish(&SomethingHappenedEvent{User: cmd.User})
 		}()
@@ -93,7 +97,7 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside global post-command handler! (type: %s, data: %s)\n", goevents.CommandName(c), string(data))
+		fmt.Printf("inside global post-command handler\n  (%s) %s\n", goevents.CommandName(c), string(data))
 		return nil
 	})
 
