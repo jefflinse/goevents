@@ -75,20 +75,22 @@ func main() {
 	})
 
 	// Create a command handler that will be called when the "DoSomething" command is dispatcheed.
-	commands.Handle(&DoSomethingCommand{}, func(c goevents.Command) (goevents.CommandResult, error) {
+	commands.Handle(&DoSomethingCommand{}, func(c goevents.Command) error {
 		data, err := c.Data()
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		fmt.Printf("inside %s command handler!\n  %s\n", goevents.CommandName(c), string(data))
 
 		cmd := c.(*DoSomethingCommand)
-		defer func() {
-			events.Publish(&SomethingHappenedEvent{User: cmd.User})
-		}()
+		if err := events.Publish(&SomethingHappenedEvent{User: cmd.User}); err != nil {
+			// If the event could not be published, handle it here,
+			// such as reverting the changes caused by the command.
+			return err
+		}
 
-		return nil, nil
+		return nil
 	})
 
 	commands.AfterAny(func(c goevents.Command) error {

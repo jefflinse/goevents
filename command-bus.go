@@ -8,7 +8,7 @@ import (
 // A CommandBus is anything capable of command pub/sub.
 type CommandBus interface {
 	Handle(Command, CommandHandlerFn)
-	Dispatch(Command) (CommandResult, error)
+	Dispatch(Command) error
 }
 
 // The MemoryCommandBus is a CommandBus that dispatches commands to
@@ -41,35 +41,34 @@ func (bus *MemoryCommandBus) AfterAny(fn CommandProcessorFn) {
 }
 
 // Dispatch dispatches a command to the appropriate handler.
-func (bus *MemoryCommandBus) Dispatch(cmd Command) (CommandResult, error) {
+func (bus *MemoryCommandBus) Dispatch(cmd Command) error {
 	data, err := cmd.Data()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	log.Printf("[dispatch] %s %s\n", CommandName(cmd), string(data))
 
 	for _, before := range bus.preHandlers {
 		if err := before(cmd); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	handler, ok := bus.handlers[CommandName(cmd)]
 	if !ok {
-		return nil, fmt.Errorf("no registered command handlers for %q", CommandName(cmd))
+		return fmt.Errorf("no registered command handlers for %q", CommandName(cmd))
 	}
 
-	result, err := handler(cmd)
-	if err != nil {
-		return nil, err
+	if err := handler(cmd); err != nil {
+		return err
 	}
 
 	for _, after := range bus.postHandlers {
 		if err := after(cmd); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return result, nil
+	return nil
 }
