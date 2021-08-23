@@ -3,42 +3,28 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/jefflinse/goevents"
 )
 
 type DoSomethingCommand struct {
+	User   string
 	Before string
 	After  string
 }
 
-func (c *DoSomethingCommand) Type() string {
+func (c *DoSomethingCommand) UID() string {
 	return "DoSomething"
 }
 
-func (c *DoSomethingCommand) Data() []byte {
-	b, _ := json.Marshal(c)
-	return b
+func (c *DoSomethingCommand) Data() ([]byte, error) {
+	return json.Marshal(c)
 }
 
 type SomethingHappenedEvent struct {
+	goevents.DefaultEvent
 	Before string
 	After  string
-	When   time.Time
-}
-
-func (c *SomethingHappenedEvent) Type() string {
-	return "SomethingHappened"
-}
-
-func (c *SomethingHappenedEvent) Data() []byte {
-	b, _ := json.Marshal(c)
-	return b
-}
-
-func (c *SomethingHappenedEvent) At() time.Time {
-	return c.When
 }
 
 func main() {
@@ -46,23 +32,68 @@ func main() {
 	events := goevents.MemoryEventBus{}
 	commands := goevents.DefaultCommandBus{}
 
-	// Register an event handler that will be called when *any* event is published.
-	events.SubscribeAll(func(e goevents.Event) error {
-		fmt.Printf("inside global event handler! (type: %s, data: %s)\n", e.Type(), string(e.Data()))
+	// Register an event handler that will be called before *any* event is handled.
+	events.BeforeAny(func(e goevents.Event) error {
+		data, err := e.Data()
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("inside global pre-event handler! (type: %s, data: %s)\n", e.UID(), string(data))
 		return nil
 	})
 
 	// Register an event handler that will be called when the "SomethingHappened" event is published.
-	events.Subscribe(&SomethingHappenedEvent{}, func(e goevents.Event) error {
-		fmt.Printf("inside %s event handler! (data: %s)\n", e.Type(), string(e.Data()))
+	events.On("SomethingHappened", func(e goevents.Event) error {
+		data, err := e.Data()
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("inside %s event handler! (data: %s)\n", e.UID(), string(data))
+
+		event := e.(*SomethingHappenedEvent)
+		fmt.Printf("  before: %s\n", event.Before)
+		fmt.Printf("  after:  %s\n", event.After)
+		return nil
+	})
+
+	// Register an event handler that wsill be called after *any* event is handled.
+	events.AfterAny(func(e goevents.Event) error {
+		data, err := e.Data()
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("inside global post-event handler! (type: %s, data: %s)\n", e.UID(), string(data))
+		return nil
+	})
+
+	commands.BeforeAny(func(c goevents.Command) error {
+		data, err := c.Data()
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("inside global pre-command handler! (type: %s, data: %s)\n", c.UID(), string(data))
 		return nil
 	})
 
 	// Create a command handler that will be called when the "DoSomething" command is dispatcheed.
-	commands.Handle("DoSomething", func(c goevents.Command) error {
+	commands.Handle("DoSomething", func(c goevents.Command) (goevents.CommandResult, error) {
 		cmd := c.(*DoSomethingCommand)
-		fmt.Printf("inside %s command handler!\n", cmd.Type())
-		events.Publish(&SomethingHappenedEvent{Before: cmd.Before, After: cmd.After, When: time.Now()})
+		fmt.Printf("inside DoSomething command handler!\n")
+		events.Publish(&SomethingHappenedEvent{Before: cmd.Before, After: cmd.After})
+		return nil, nil
+	})
+
+	commands.AfterAny(func(c goevents.Command) error {
+		data, err := c.Data()
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("inside global post-command handler! (type: %s, data: %s)\n", c.UID(), string(data))
 		return nil
 	})
 
