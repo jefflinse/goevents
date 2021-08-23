@@ -1,25 +1,32 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/jefflinse/goevents"
 )
 
 type DoSomethingCommand struct {
-	goevents.JSONCommand
 	User string
 }
 
+func (c *DoSomethingCommand) Data() ([]byte, error) {
+	return json.Marshal(c)
+}
+
 type SomethingHappenedEvent struct {
-	goevents.JSONEvent
 	User string
+}
+
+func (e *SomethingHappenedEvent) Data() ([]byte, error) {
+	return json.Marshal(e)
 }
 
 func main() {
 	// Create the event and command busses.
 	events := goevents.MemoryEventBus{}
-	commands := goevents.DefaultCommandBus{}
+	commands := goevents.MemoryCommandBus{}
 
 	// Register an event handler that will be called before *any* event is handled.
 	events.BeforeAny(func(e goevents.Event) error {

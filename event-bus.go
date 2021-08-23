@@ -29,6 +29,7 @@ type MemoryEventBus struct {
 
 var _ EventBus = &MemoryEventBus{}
 
+// Publish publishes an event, calling all registered handlers.
 func (bus *MemoryEventBus) Publish(event Event) error {
 	data, err := event.Data()
 	if err != nil {
@@ -59,6 +60,7 @@ func (bus *MemoryEventBus) Publish(event Event) error {
 	return nil
 }
 
+// BeforeAny registers a handler to be called before any event is published.
 func (bus *MemoryEventBus) BeforeAny(handler EventHandler) error {
 	if bus.globalPreSubscribers == nil {
 		bus.globalPreSubscribers = make([]EventHandler, 0)
@@ -68,6 +70,7 @@ func (bus *MemoryEventBus) BeforeAny(handler EventHandler) error {
 	return nil
 }
 
+// On registers a handler to be called when an event of the given type is published.
 func (bus *MemoryEventBus) On(eventType Event, handler EventHandler) error {
 	if bus.subscribers == nil {
 		bus.subscribers = make(map[string][]EventHandler)
@@ -84,6 +87,7 @@ func (bus *MemoryEventBus) On(eventType Event, handler EventHandler) error {
 	return nil
 }
 
+// AfterAny registers a handler to be called after any event is published.
 func (bus *MemoryEventBus) AfterAny(handler EventHandler) error {
 	if bus.globalPostSubscribers == nil {
 		bus.globalPostSubscribers = make([]EventHandler, 0)
