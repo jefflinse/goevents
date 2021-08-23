@@ -5,25 +5,20 @@ import (
 )
 
 type Event interface {
-	UID() string
-	At() *time.Time
+	Name() string
 	Data() ([]byte, error)
 }
 
 type EventHandler func(event Event) error
 
 type DefaultEvent struct {
-	Name         string
+	EventName    string
 	DispatchedAt *time.Time
 	EventData    []byte
 }
 
-func (e *DefaultEvent) UID() string {
-	return e.Name
-}
-
-func (e *DefaultEvent) At() *time.Time {
-	return e.DispatchedAt
+func (e *DefaultEvent) Name() string {
+	return e.EventName
 }
 
 func (e *DefaultEvent) Data() ([]byte, error) {

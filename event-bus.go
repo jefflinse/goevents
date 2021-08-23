@@ -33,7 +33,7 @@ func (bus *MemoryEventBus) Publish(event Event) error {
 		return err
 	}
 
-	log.Printf("[publish] %s %s\n", event.UID(), string(data))
+	log.Printf("[publish] %s %s\n", event.Name(), string(data))
 
 	for _, before := range bus.globalPreSubscribers {
 		if err := before(event); err != nil {
@@ -41,7 +41,7 @@ func (bus *MemoryEventBus) Publish(event Event) error {
 		}
 	}
 
-	for _, handle := range bus.subscribers[event.UID()] {
+	for _, handle := range bus.subscribers[event.Name()] {
 		if err := handle(event); err != nil {
 			return err
 		}

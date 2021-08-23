@@ -13,7 +13,7 @@ type DoSomethingCommand struct {
 	After  string
 }
 
-func (c *DoSomethingCommand) UID() string {
+func (c *DoSomethingCommand) Name() string {
 	return "DoSomething"
 }
 
@@ -39,7 +39,7 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside global pre-event handler! (type: %s, data: %s)\n", e.UID(), string(data))
+		fmt.Printf("inside global pre-event handler! (type: %s, data: %s)\n", e.Name(), string(data))
 		return nil
 	})
 
@@ -50,7 +50,7 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside %s event handler! (data: %s)\n", e.UID(), string(data))
+		fmt.Printf("inside %s event handler! (data: %s)\n", e.Name(), string(data))
 
 		event := e.(*SomethingHappenedEvent)
 		fmt.Printf("  before: %s\n", event.Before)
@@ -65,7 +65,7 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside global post-event handler! (type: %s, data: %s)\n", e.UID(), string(data))
+		fmt.Printf("inside global post-event handler! (type: %s, data: %s)\n", e.Name(), string(data))
 		return nil
 	})
 
@@ -75,7 +75,7 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside global pre-command handler! (type: %s, data: %s)\n", c.UID(), string(data))
+		fmt.Printf("inside global pre-command handler! (type: %s, data: %s)\n", c.Name(), string(data))
 		return nil
 	})
 
@@ -93,9 +93,9 @@ func main() {
 			return err
 		}
 
-		fmt.Printf("inside global post-command handler! (type: %s, data: %s)\n", c.UID(), string(data))
+		fmt.Printf("inside global post-command handler! (type: %s, data: %s)\n", c.Name(), string(data))
 		return nil
 	})
 
-	commands.Dispatch(&DoSomethingCommand{Before: "before", After: "after"})
+	commands.Dispatch(&DoSomethingCommand{User: "Jeff", Before: "before", After: "after"})
 }
