@@ -18,7 +18,3 @@ type EventContext struct {
 }
 
 type EventHandler func(e *EventContext) error
-
-var NoopEventHandler = func(e *EventContext) error {
-	return nil
-}

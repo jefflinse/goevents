@@ -7,35 +7,35 @@ import (
 
 // A CommandDispatcher is anything capable of command pub/sub.
 type CommandDispatcher interface {
-	On(Command, CommandHandlerFn)
+	On(Command, CommandHandler)
 	Dispatch(Command) error
 }
 
 // The LocalCommandDispatcher is a synchronous, in-memory command dispatcher implementation.
 type LocalCommandDispatcher struct {
-	globalPreHandlers  []CommandHandlerFn
-	handlers           map[string]CommandHandlerFn
-	globalPostHandlers []CommandHandlerFn
+	globalPreHandlers  []CommandHandler
+	handlers           map[string]CommandHandler
+	globalPostHandlers []CommandHandler
 }
 
 var _ CommandDispatcher = &LocalCommandDispatcher{}
 
 // BeforeAny registers a handler that runs before any command is handled.
-func (bus *LocalCommandDispatcher) BeforeAny(fn CommandHandlerFn) {
+func (bus *LocalCommandDispatcher) BeforeAny(fn CommandHandler) {
 	bus.globalPreHandlers = append(bus.globalPreHandlers, fn)
 }
 
 // Handle registers the handler for a command type.
-func (bus *LocalCommandDispatcher) On(commandType Command, handler CommandHandlerFn) {
+func (bus *LocalCommandDispatcher) On(commandType Command, handler CommandHandler) {
 	if bus.handlers == nil {
-		bus.handlers = make(map[string]CommandHandlerFn)
+		bus.handlers = make(map[string]CommandHandler)
 	}
 
 	bus.handlers[CommandName(commandType)] = handler
 }
 
 // AfterAny registers a handler that runs after any command is handled.
-func (bus *LocalCommandDispatcher) AfterAny(fn CommandHandlerFn) {
+func (bus *LocalCommandDispatcher) AfterAny(fn CommandHandler) {
 	bus.globalPostHandlers = append(bus.globalPostHandlers, fn)
 }
 

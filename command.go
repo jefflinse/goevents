@@ -17,5 +17,5 @@ type CommandContext struct {
 	Command      Command
 }
 
-// A CommandHandlerFn is a function that handles a Command.
-type CommandHandlerFn func(cmd *CommandContext) error
+// A CommandHandler is a function that handles a Command.
+type CommandHandler func(cmd *CommandContext) error
