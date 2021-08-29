@@ -2,6 +2,7 @@ package goevents
 
 import (
 	"log"
+	"time"
 )
 
 // An EventPublisher is anything that can publish events.
@@ -31,28 +32,29 @@ var _ EventBus = &MemoryEventBus{}
 
 // Publish publishes an event, calling all registered handlers.
 func (bus *MemoryEventBus) Publish(event Event) error {
-	data, err := event.Data()
-	if err != nil {
-		return err
+	eventName := EventName(event)
+	eventCtx := &EventContext{
+		Type:         eventName,
+		DispatchedAt: time.Now(),
+		Event:        event,
 	}
 
-	eventName := EventName(event)
-	log.Printf("[publish] %s %s\n", eventName, string(data))
+	log.Printf("[publish] %s %+v\n", eventName, eventCtx)
 
 	for _, before := range bus.globalPreSubscribers {
-		if err := before(event); err != nil {
+		if err := before(eventCtx); err != nil {
 			return err
 		}
 	}
 
 	for _, handle := range bus.subscribers[EventName(event)] {
-		if err := handle(event); err != nil {
+		if err := handle(eventCtx); err != nil {
 			return err
 		}
 	}
 
 	for _, after := range bus.globalPostSubscribers {
-		if err := after(event); err != nil {
+		if err := after(eventCtx); err != nil {
 			return err
 		}
 	}

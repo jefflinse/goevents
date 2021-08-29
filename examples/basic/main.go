@@ -29,38 +29,22 @@ func main() {
 	commands := goevents.MemoryCommandBus{}
 
 	// Register an event handler that will be called before *any* event is handled.
-	events.BeforeAny(func(e goevents.Event) error {
-		data, err := e.Data()
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("inside global pre-event handler!\n  (%s) %s\n", goevents.EventName(e), string(data))
+	events.BeforeAny(func(e *goevents.EventContext) error {
+		fmt.Printf("inside global pre-event handler!\n  (%s) %+v\n", goevents.EventName(e), e.Event)
 		return nil
 	})
 
 	// Register an event handler that will be called when the "SomethingHappened" event is published.
-	events.On(&SomethingHappenedEvent{}, func(e goevents.Event) error {
-		event := e.(*SomethingHappenedEvent)
-		data, err := e.Data()
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("inside %s event handler!\n  %s\n", goevents.EventName(e), string(data))
-
+	events.On(&SomethingHappenedEvent{}, func(e *goevents.EventContext) error {
+		event := e.Event.(*SomethingHappenedEvent)
+		fmt.Printf("inside %s event handler!\n  %+v\n", goevents.EventName(e), event)
 		fmt.Printf("  user: %s\n", event.User)
 		return nil
 	})
 
 	// Register an event handler that wsill be called after *any* event is handled.
-	events.AfterAny(func(e goevents.Event) error {
-		data, err := e.Data()
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("inside global post-event handler!\n  (%s) %s\n", goevents.EventName(e), string(data))
+	events.AfterAny(func(e *goevents.EventContext) error {
+		fmt.Printf("inside global post-event handler!\n  (%s) %+v\n", goevents.EventName(e), e.Event)
 		return nil
 	})
 

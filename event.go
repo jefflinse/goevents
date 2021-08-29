@@ -1,7 +1,17 @@
 package goevents
 
-type Event interface {
-	Data() ([]byte, error)
+import "time"
+
+type Event interface{}
+
+type EventContext struct {
+	Type         string
+	DispatchedAt time.Time
+	Event        Event
 }
 
-type EventHandler func(event Event) error
+type EventHandler func(e *EventContext) error
+
+var NoopEventHandler = func(e *EventContext) error {
+	return nil
+}
