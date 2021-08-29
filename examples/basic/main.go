@@ -25,7 +25,7 @@ func (e *SomethingHappenedEvent) Data() ([]byte, error) {
 
 func main() {
 	// Create the event and command busses.
-	events := goevents.MemoryEventBus{}
+	events := goevents.LocalEventDispatcher{}
 	commands := goevents.MemoryCommandBus{}
 
 	// Register an event handler that will be called before *any* event is handled.

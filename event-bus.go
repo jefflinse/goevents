@@ -5,33 +5,23 @@ import (
 	"time"
 )
 
-// An EventPublisher is anything that can publish events.
-type EventPublisher interface {
+// An EventDispatcher is anything capable of event pub/sub.
+type EventDispatcher interface {
+	On(Event, EventHandler) error
 	Publish(Event) error
 }
 
-// An EventSubscriber is anything that can subscribe to events.
-type EventSubscriber interface {
-	On(Event, EventHandler) error
+// LocalEventDispatcher is an in-memory event dispatcher implementation.
+type LocalEventDispatcher struct {
+	globalPreHandlers  []EventHandler
+	handlers           map[string][]EventHandler
+	globalPostHandlers []EventHandler
 }
 
-// An EventBus is anything capable of event pub/sub.
-type EventBus interface {
-	EventPublisher
-	EventSubscriber
-}
-
-// MemoryEventBus is an in-memory event bus implementation.
-type MemoryEventBus struct {
-	globalPreSubscribers  []EventHandler
-	subscribers           map[string][]EventHandler
-	globalPostSubscribers []EventHandler
-}
-
-var _ EventBus = &MemoryEventBus{}
+var _ EventDispatcher = &LocalEventDispatcher{}
 
 // Publish publishes an event, calling all registered handlers.
-func (bus *MemoryEventBus) Publish(event Event) error {
+func (bus *LocalEventDispatcher) Publish(event Event) error {
 	eventName := EventName(event)
 	eventCtx := &EventContext{
 		Type:         eventName,
@@ -41,19 +31,19 @@ func (bus *MemoryEventBus) Publish(event Event) error {
 
 	log.Printf("[publish] %s %+v\n", eventName, eventCtx)
 
-	for _, before := range bus.globalPreSubscribers {
+	for _, before := range bus.globalPreHandlers {
 		if err := before(eventCtx); err != nil {
 			return err
 		}
 	}
 
-	for _, handle := range bus.subscribers[EventName(event)] {
+	for _, handle := range bus.handlers[EventName(event)] {
 		if err := handle(eventCtx); err != nil {
 			return err
 		}
 	}
 
-	for _, after := range bus.globalPostSubscribers {
+	for _, after := range bus.globalPostHandlers {
 		if err := after(eventCtx); err != nil {
 			return err
 		}
@@ -62,39 +52,42 @@ func (bus *MemoryEventBus) Publish(event Event) error {
 	return nil
 }
 
-// BeforeAny registers a handler to be called before any event is published.
-func (bus *MemoryEventBus) BeforeAny(handler EventHandler) error {
-	if bus.globalPreSubscribers == nil {
-		bus.globalPreSubscribers = make([]EventHandler, 0)
+// BeforeAny registers a handler to be called before any event is dispatched.
+// All pre-dispatch handlers are run in the order they are registered.
+func (bus *LocalEventDispatcher) BeforeAny(handler EventHandler) error {
+	if bus.globalPreHandlers == nil {
+		bus.globalPreHandlers = make([]EventHandler, 0)
 	}
 
-	bus.globalPreSubscribers = append(bus.globalPreSubscribers, handler)
+	bus.globalPreHandlers = append(bus.globalPreHandlers, handler)
 	return nil
 }
 
 // On registers a handler to be called when an event of the given type is published.
-func (bus *MemoryEventBus) On(eventType Event, handler EventHandler) error {
-	if bus.subscribers == nil {
-		bus.subscribers = make(map[string][]EventHandler)
+// All event handlers are run in the order they are registered.
+func (bus *LocalEventDispatcher) On(eventType Event, handler EventHandler) error {
+	if bus.handlers == nil {
+		bus.handlers = make(map[string][]EventHandler)
 	}
 
 	eventName := EventName(eventType)
 
-	if bus.subscribers[eventName] == nil {
-		bus.subscribers[eventName] = make([]EventHandler, 0)
+	if bus.handlers[eventName] == nil {
+		bus.handlers[eventName] = make([]EventHandler, 0)
 	}
 
-	bus.subscribers[eventName] = append(bus.subscribers[eventName], handler)
+	bus.handlers[eventName] = append(bus.handlers[eventName], handler)
 
 	return nil
 }
 
-// AfterAny registers a handler to be called after any event is published.
-func (bus *MemoryEventBus) AfterAny(handler EventHandler) error {
-	if bus.globalPostSubscribers == nil {
-		bus.globalPostSubscribers = make([]EventHandler, 0)
+// AfterAny registers a handler to be called after any event is dispatched.
+// All post-dispatch handlers are run in the order they are registered.
+func (bus *LocalEventDispatcher) AfterAny(handler EventHandler) error {
+	if bus.globalPostHandlers == nil {
+		bus.globalPostHandlers = make([]EventHandler, 0)
 	}
 
-	bus.globalPostSubscribers = append(bus.globalPostSubscribers, handler)
+	bus.globalPostHandlers = append(bus.globalPostHandlers, handler)
 	return nil
 }
