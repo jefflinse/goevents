@@ -1,8 +1,15 @@
 package goevents
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type Command interface{}
+
+func CommandName(c Command) string {
+	return strings.TrimSuffix(typeName(c), "Command")
+}
 
 type CommandContext struct {
 	Type         string

@@ -2,7 +2,6 @@ package goevents
 
 import (
 	"reflect"
-	"strings"
 )
 
 func typeName(v interface{}) string {
@@ -14,12 +13,4 @@ func typeName(v interface{}) string {
 	}
 
 	return name
-}
-
-func EventName(v interface{}) string {
-	return strings.TrimSuffix(typeName(v), "Event")
-}
-
-func CommandName(v interface{}) string {
-	return strings.TrimSuffix(typeName(v), "Command")
 }

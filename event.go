@@ -1,8 +1,15 @@
 package goevents
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type Event interface{}
+
+func EventName(e Event) string {
+	return strings.TrimSuffix(typeName(e), "Event")
+}
 
 type EventContext struct {
 	Type         string
