@@ -1,11 +1,14 @@
 package goevents
 
-type Command interface {
-	Data() ([]byte, error)
+import "time"
+
+type Command interface{}
+
+type CommandContext struct {
+	Type         string
+	DispatchedAt time.Time
+	Command      Command
 }
 
 // A CommandHandlerFn is a function that handles a Command.
-type CommandHandlerFn func(cmd Command) error
-
-// A CommandProcessorFn is a function that performs an action before or after handling a Command.
-type CommandProcessorFn func(cmd Command) error
+type CommandHandlerFn func(cmd *CommandContext) error

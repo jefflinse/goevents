@@ -2,32 +2,31 @@ package goevents
 
 import (
 	"fmt"
-	"log"
+	"time"
 )
 
-// A CommandBus is anything capable of command pub/sub.
-type CommandBus interface {
-	Handle(Command, CommandHandlerFn)
+// A CommandDispatcher is anything capable of command pub/sub.
+type CommandDispatcher interface {
+	On(Command, CommandHandlerFn)
 	Dispatch(Command) error
 }
 
-// The MemoryCommandBus is a CommandBus that dispatches commands to
-// handlers registered locally in-memory.
-type MemoryCommandBus struct {
-	preHandlers  []CommandProcessorFn
-	handlers     map[string]CommandHandlerFn
-	postHandlers []CommandProcessorFn
+// The LocalCommandDispatcher is a synchronous, in-memory command dispatcher implementation.
+type LocalCommandDispatcher struct {
+	globalPreHandlers  []CommandHandlerFn
+	handlers           map[string]CommandHandlerFn
+	globalPostHandlers []CommandHandlerFn
 }
 
-var _ CommandBus = &MemoryCommandBus{}
+var _ CommandDispatcher = &LocalCommandDispatcher{}
 
 // BeforeAny registers a handler that runs before any command is handled.
-func (bus *MemoryCommandBus) BeforeAny(fn CommandProcessorFn) {
-	bus.preHandlers = append(bus.preHandlers, fn)
+func (bus *LocalCommandDispatcher) BeforeAny(fn CommandHandlerFn) {
+	bus.globalPreHandlers = append(bus.globalPreHandlers, fn)
 }
 
 // Handle registers the handler for a command type.
-func (bus *MemoryCommandBus) Handle(commandType Command, handler CommandHandlerFn) {
+func (bus *LocalCommandDispatcher) On(commandType Command, handler CommandHandlerFn) {
 	if bus.handlers == nil {
 		bus.handlers = make(map[string]CommandHandlerFn)
 	}
@@ -36,36 +35,36 @@ func (bus *MemoryCommandBus) Handle(commandType Command, handler CommandHandlerF
 }
 
 // AfterAny registers a handler that runs after any command is handled.
-func (bus *MemoryCommandBus) AfterAny(fn CommandProcessorFn) {
-	bus.postHandlers = append(bus.postHandlers, fn)
+func (bus *LocalCommandDispatcher) AfterAny(fn CommandHandlerFn) {
+	bus.globalPostHandlers = append(bus.globalPostHandlers, fn)
 }
 
 // Dispatch dispatches a command to the appropriate handler.
-func (bus *MemoryCommandBus) Dispatch(cmd Command) error {
-	data, err := cmd.Data()
-	if err != nil {
-		return err
+func (bus *LocalCommandDispatcher) Dispatch(cmd Command) error {
+	cmdName := CommandName(cmd)
+	cmdCtx := &CommandContext{
+		Type:         cmdName,
+		DispatchedAt: time.Now(),
+		Command:      cmd,
 	}
 
-	log.Printf("[dispatch] %s %s\n", CommandName(cmd), string(data))
-
-	for _, before := range bus.preHandlers {
-		if err := before(cmd); err != nil {
+	for _, before := range bus.globalPreHandlers {
+		if err := before(cmdCtx); err != nil {
 			return err
 		}
 	}
 
-	handler, ok := bus.handlers[CommandName(cmd)]
+	handler, ok := bus.handlers[cmdName]
 	if !ok {
-		return fmt.Errorf("no registered command handlers for %q", CommandName(cmd))
+		return fmt.Errorf("no registered command handlers for %q", cmdName)
 	}
 
-	if err := handler(cmd); err != nil {
+	if err := handler(cmdCtx); err != nil {
 		return err
 	}
 
-	for _, after := range bus.postHandlers {
-		if err := after(cmd); err != nil {
+	for _, after := range bus.globalPostHandlers {
+		if err := after(cmdCtx); err != nil {
 			return err
 		}
 	}
