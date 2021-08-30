@@ -8,20 +8,20 @@ import (
 // A CommandDispatcher is anything capable of command pub/sub.
 type CommandDispatcher interface {
 	On(Command, CommandHandler)
-	Dispatch(Command) error
+	Dispatch(Command) (*CommandResult, error)
 }
 
-// The LocalCommandDispatcher is a synchronous, in-memory command dispatcher implementation.
+// The LocalCommandDispatcher sis a synchronous, in-memory command dispatcher implementation.
 type LocalCommandDispatcher struct {
-	globalPreHandlers  []CommandHandler
+	globalPreHandlers  []CommandProcessor
 	handlers           map[string]CommandHandler
-	globalPostHandlers []CommandHandler
+	globalPostHandlers []CommandProcessor
 }
 
 var _ CommandDispatcher = &LocalCommandDispatcher{}
 
 // BeforeAny registers a handler that runs before any command is handled.
-func (bus *LocalCommandDispatcher) BeforeAny(fn CommandHandler) {
+func (bus *LocalCommandDispatcher) BeforeAny(fn CommandProcessor) {
 	bus.globalPreHandlers = append(bus.globalPreHandlers, fn)
 }
 
@@ -35,12 +35,12 @@ func (bus *LocalCommandDispatcher) On(commandType Command, handler CommandHandle
 }
 
 // AfterAny registers a handler that runs after any command is handled.
-func (bus *LocalCommandDispatcher) AfterAny(fn CommandHandler) {
+func (bus *LocalCommandDispatcher) AfterAny(fn CommandProcessor) {
 	bus.globalPostHandlers = append(bus.globalPostHandlers, fn)
 }
 
 // Dispatch dispatches a command to the appropriate handler.
-func (bus *LocalCommandDispatcher) Dispatch(cmd Command) error {
+func (bus *LocalCommandDispatcher) Dispatch(cmd Command) (*CommandResult, error) {
 	cmdName := CommandName(cmd)
 	cmdCtx := &CommandContext{
 		Type:         cmdName,
@@ -50,24 +50,25 @@ func (bus *LocalCommandDispatcher) Dispatch(cmd Command) error {
 
 	for _, before := range bus.globalPreHandlers {
 		if err := before(cmdCtx); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	handler, ok := bus.handlers[cmdName]
 	if !ok {
-		return fmt.Errorf("no registered command handlers for %q", cmdName)
+		return nil, fmt.Errorf("no registered command handlers for %q", cmdName)
 	}
 
-	if err := handler(cmdCtx); err != nil {
-		return err
+	result, err := handler(cmdCtx)
+	if err != nil {
+		return result, err
 	}
 
 	for _, after := range bus.globalPostHandlers {
 		if err := after(cmdCtx); err != nil {
-			return err
+			return result, err
 		}
 	}
 
-	return nil
+	return result, nil
 }

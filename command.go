@@ -17,5 +17,18 @@ type CommandContext struct {
 	Command      Command
 }
 
-// A CommandHandler is a function that handles a Command.
-type CommandHandler func(cmd *CommandContext) error
+type CommandResult struct {
+	Result interface{}
+}
+
+var EmptyCommandResult = &CommandResult{
+	Result: nil,
+}
+
+// A CommandHandler is a function that handles a Command,
+// returning a result and an error.
+type CommandHandler func(cmd *CommandContext) (*CommandResult, error)
+
+// A CommandContextProcessor is a function that pre- or pos-processes a Command,
+// potentially modifying the CommandContext.
+type CommandProcessor func(cmd *CommandContext) error
